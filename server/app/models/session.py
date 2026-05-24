@@ -6,7 +6,7 @@ import uuid
 from app.database import Base
 
 
-class Session(Base):
+class UserSession(Base):
     __tablename__ = "sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(

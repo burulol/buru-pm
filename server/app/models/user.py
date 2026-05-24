@@ -20,5 +20,5 @@ class User(Base):
     )
 
     sessions = relationship(
-        "Session", back_populates="user", cascade="all, delete-orphan"
+        "UserSession", back_populates="user", cascade="all, delete-orphan"
     )
