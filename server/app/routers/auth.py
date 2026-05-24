@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest
 from app.services import auth as auth_service
+from app.models.user import User
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.database import get_db
 
 router = APIRouter()
@@ -11,16 +13,22 @@ fake_user_db: dict = {}
 
 
 @router.post("/register", status_code=201)
-def register(body: RegisterRequest):
-    if body.email in fake_user_db:
+async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+
+    result = await db.execute(select(User).where(User.email == body.email))
+    existing = result.scalar_one_or_none()
+
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    fake_user_db[body.email] = {
-        "email": body.email,
-        "auth_key_hash": auth_service.hash(body.auth_key),
-        "salt": body.salt,
-        "sessions": {},
-    }
+    new_user = User(
+        email=body.email,
+        auth_key_hash=auth_service.hash(body.auth_key),
+        salt=body.salt,
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
 
     return {"message": "User registered successfully"}
 
