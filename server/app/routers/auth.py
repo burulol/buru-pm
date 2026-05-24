@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.auth import RegisterRequest, LoginRequest
+from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest
 from app.services import auth as auth_service
 
 router = APIRouter()
@@ -43,3 +43,11 @@ def login(body: LoginRequest):
         "full_access_token": full_access_token,
         "limited_access_token": limited_access_token,
     }
+
+
+@router.post("/salt", status_code=200)
+def get_salt(body: SaltRequest):
+    if body.email not in fake_user_db:
+        return {"salt": auth_service.generate_fake_salt(email=body.email)}
+
+    return {"salt": fake_user_db[body.email]["salt"]}
