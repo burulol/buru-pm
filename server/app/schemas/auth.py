@@ -11,3 +11,7 @@ class LoginRequest(BaseModel):
     email: EmailStr
     auth_key: str
     device: str
+
+
+class SaltRequest(BaseModel):
+    email: EmailStr

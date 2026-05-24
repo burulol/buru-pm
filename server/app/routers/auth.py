@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest
 from app.services import auth as auth_service
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db
 
 router = APIRouter()
 
