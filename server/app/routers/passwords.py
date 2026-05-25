@@ -76,3 +76,30 @@ async def get_password(
         raise HTTPException(status_code=404, detail="Password not found")
 
     return {"password": entry.password}
+
+
+@router.patch("", status_code=204)
+async def update_password(
+    body: PasswordCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload["sub"]
+
+    result = await db.execute(
+        select(Entry).where(
+            and_(
+                Entry.user_id == uuid.UUID(user_id),
+                Entry.platform == body.platform,
+                Entry.username == body.username,
+            )
+        )
+    )
+    entry = result.scalar_one_or_none()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail="Password not found")
+
+    entry.password = body.password
+    await db.commit()
