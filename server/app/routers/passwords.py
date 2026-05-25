@@ -103,3 +103,31 @@ async def update_password(
 
     entry.password = body.password
     await db.commit()
+
+
+@router.delete("/{platform}/{username}", status_code=204)
+async def delete_password(
+    platform: str,
+    username: str,
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload["sub"]
+
+    result = await db.execute(
+        select(Entry).where(
+            and_(
+                Entry.user_id == uuid.UUID(user_id),
+                Entry.platform == platform,
+                Entry.username == username,
+            )
+        )
+    )
+    entry = result.scalar_one_or_none()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail="Password not found")
+
+    await db.delete(entry)
+    await db.commit()
