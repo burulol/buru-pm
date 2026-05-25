@@ -17,7 +17,7 @@ def create_full_access_token(user_id: str) -> str:
     payload = {
         "sub": user_id,
         "exp": datetime.now(timezone.utc)
-        + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        + timedelta(days=settings.FULL_ACCESS_TOKEN_EXPIRE_DAYS),
         "scope": "full",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
@@ -27,7 +27,7 @@ def create_limited_access_token(user_id: str) -> str:
     payload = {
         "sub": user_id,
         "exp": datetime.now(timezone.utc)
-        + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        + timedelta(days=settings.LIMITED_ACCESS_TOKEN_EXPIRE_DAYS),
         "scope": "limited",
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")

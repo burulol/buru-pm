@@ -17,9 +17,6 @@ class UserSession(Base):
     )
     full_access_token_hash: Mapped[str] = mapped_column(String, nullable=False)
     device_name: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
