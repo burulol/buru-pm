@@ -80,7 +80,6 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         )
 
     db.add(new_session)
-
     await db.commit()
 
     return {
@@ -90,8 +89,11 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/salt", status_code=200)
-def get_salt(body: SaltRequest):
-    if body.email not in fake_user_db:
+async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
         return {"salt": auth_service.generate_fake_salt(email=body.email)}
 
-    return {"salt": fake_user_db[body.email]["salt"]}
+    return {"salt": user.salt}
