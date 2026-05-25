@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException
-from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest
+from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest, EmailUpdateRequest
 from app.services import auth as auth_service
 from app.models.user import User
 from app.models.session import UserSession
@@ -97,3 +97,8 @@ async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
         return {"salt": auth_service.generate_fake_salt(email=body.email)}
 
     return {"salt": user.salt}
+
+@router.patch("/email", status_code=204)
+async def update_email(body: EmailUpdateRequest, db: AsyncSession = Depends(get_db)):
+
+

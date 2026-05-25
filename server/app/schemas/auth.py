@@ -15,3 +15,8 @@ class LoginRequest(BaseModel):
 
 class SaltRequest(BaseModel):
     email: EmailStr
+
+
+class EmailUpdateRequest(BaseModel):
+    old_email: EmailStr
+    new_email: EmailStr
