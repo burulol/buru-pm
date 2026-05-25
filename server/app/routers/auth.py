@@ -1,7 +1,13 @@
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException
-from app.schemas.auth import RegisterRequest, LoginRequest, SaltRequest, EmailUpdateRequest
+from app.schemas.auth import (
+    RegisterRequest,
+    LoginRequest,
+    SaltRequest,
+    EmailUpdateRequest,
+    DeleteSessionRequest,
+)
 from app.services import auth as auth_service
 from app.models.user import User
 from app.models.session import UserSession
@@ -90,6 +96,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/salt", status_code=200)
 async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
+
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
 
@@ -98,7 +105,69 @@ async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
 
     return {"salt": user.salt}
 
+
 @router.patch("/email", status_code=204)
-async def update_email(body: EmailUpdateRequest, db: AsyncSession = Depends(get_db)):
+async def update_email(
+    body: EmailUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload.get("sub")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # check new email not already taken
+    result = await db.execute(select(User).where(User.email == body.new_email))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="New email already registered")
+
+    user.email = body.new_email
+    await db.commit()
 
 
+@router.delete("/session", status_code=204)
+async def delete_session(
+    body: DeleteSessionRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload.get("sub")
+
+    result = await db.execute(
+        select(UserSession).where(
+            and_(
+                UserSession.user_id == user_id,
+                UserSession.device_name == body.device,
+            )
+        )
+    )
+    sessions = result.scalars().all()
+
+    for session in sessions:
+        session.expires_at = datetime.now(timezone.utc)
+
+    await db.commit()
+
+
+@router.delete("/sessions", status_code=204)
+async def delete_sessions(
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload.get("sub")
+
+    result = await db.execute(select(UserSession).where(UserSession.user_id == user_id))
+    sessions = result.scalars().all()
+
+    for session in sessions:
+        session.expires_at = datetime.now(timezone.utc)
+
+    await db.commit()

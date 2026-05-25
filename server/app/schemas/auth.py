@@ -18,5 +18,8 @@ class SaltRequest(BaseModel):
 
 
 class EmailUpdateRequest(BaseModel):
-    old_email: EmailStr
     new_email: EmailStr
+
+
+class DeleteSessionRequest(BaseModel):
+    device: str
