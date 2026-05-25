@@ -85,7 +85,8 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             expires_at=expires_at,
         )
 
-    db.add(new_session)
+        db.add(new_session)
+
     await db.commit()
 
     return {
