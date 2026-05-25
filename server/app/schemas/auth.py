@@ -15,3 +15,11 @@ class LoginRequest(BaseModel):
 
 class SaltRequest(BaseModel):
     email: EmailStr
+
+
+class EmailUpdateRequest(BaseModel):
+    new_email: EmailStr
+
+
+class DeleteSessionRequest(BaseModel):
+    device: str
