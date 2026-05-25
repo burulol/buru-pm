@@ -18,12 +18,8 @@ async def list_platforms(
     user_id = payload.get("sub")
 
     result = await db.execute(
-        select(Entry.id, Entry.platform, Entry.optional_name).where(
-            Entry.user_id == user_id
-        )
+        select(Entry.id, Entry.platform).where(Entry.user_id == user_id)
     )
-    platforms = [
-        {"id": row[0], "platform": row[1], "optional_name": row[2]} for row in result
-    ]
+    platforms = [{"id": row[0], "platform": row[1]} for row in result]
 
     return {"platforms": platforms}

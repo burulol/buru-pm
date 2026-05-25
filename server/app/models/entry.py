@@ -15,7 +15,7 @@ class Entry(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     platform: Mapped[str] = mapped_column(String, nullable=False)
-    optional_name: Mapped[str] = mapped_column(String, nullable=True)
+    username: Mapped[str] = mapped_column(String, nullable=True)
     password: Mapped[str] = mapped_column(String, nullable=True)
 
     user = relationship("User", back_populates="entries")
