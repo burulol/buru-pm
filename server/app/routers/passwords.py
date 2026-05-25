@@ -49,3 +49,30 @@ async def create_password(
     await db.commit()
 
     return {}
+
+
+@router.get("/{platform}/{username}", status_code=200)
+async def get_password(
+    platform: str,
+    username: str,
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(auth_service.require_full_access),
+):
+
+    user_id = payload["sub"]
+
+    result = await db.execute(
+        select(Entry).where(
+            and_(
+                Entry.user_id == uuid.UUID(user_id),
+                Entry.platform == platform,
+                Entry.username == username,
+            )
+        )
+    )
+    entry = result.scalar_one_or_none()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail="Password not found")
+
+    return {"password": entry.password}

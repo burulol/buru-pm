@@ -1,4 +1,4 @@
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -15,7 +15,9 @@ class Entry(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     platform: Mapped[str] = mapped_column(String, nullable=False)
-    username: Mapped[str] = mapped_column(String, nullable=True)
+    username: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=True)
 
     user = relationship("User", back_populates="entries")
+
+    __table_args__ = (UniqueConstraint("user_id", "platform", "username"),)
