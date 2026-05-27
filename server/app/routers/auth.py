@@ -29,7 +29,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
 
     if user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="Email already registered")
 
     new_user = User(
         email=body.email,
