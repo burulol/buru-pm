@@ -50,7 +50,7 @@ export default function Login() {
 
   return (
     <div className="h-screen flex items-center justify-center bg-black text-white">
-      <div className="w-full max-w-sm p-8 space-y-8">
+      <div className="w-full max-w-sm p-8 space-y-8 shadow-md border border-fuchsia-700/20 shadow-fuchsia-700/20 rounded-lg">
         {/* Header */}
         <div className="text-center space-y-3">
           <BigLock className="text-fuchsia-700 w-32 h-32 mx-auto drop-shadow-[0_0_12px_rgba(192,38,211,0.25)]" />
