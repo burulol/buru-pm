@@ -34,7 +34,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     new_user = User(
         email=body.email,
         auth_key_hash=auth_service.hash(body.auth_key),
-        salt=body.salt,
+        salt=auth_service.generate_salt(email=body.email),
     )
     db.add(new_user)
     await db.commit()
@@ -102,7 +102,7 @@ async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
 
     if not user:
-        return {"salt": auth_service.generate_fake_salt(email=body.email)}
+        return {"salt": auth_service.generate_salt(email=body.email)}
 
     return {"salt": user.salt}
 

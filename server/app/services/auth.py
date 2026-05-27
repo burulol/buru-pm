@@ -90,7 +90,7 @@ async def require_full_access(
     return payload
 
 
-def generate_fake_salt(email: str) -> str:
+def generate_salt(email: str) -> str:
     return hmac.new(
         settings.SECRET_KEY.encode(), email.encode(), hashlib.sha256
     ).hexdigest()
