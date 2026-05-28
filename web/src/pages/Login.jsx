@@ -1,9 +1,11 @@
-import BigLock from "../../components/bigLock";
-import TextField from "../../components/authTextField";
-import SubmitBtn from "../../components/authSubmitErrBtn";
+import BigLock from "../components/BigLock";
+import TextField from "../components/AuthTextField";
+import SubmitBtn from "../components/AuthSubmitErrBtn";
+import useAuth from "../hooks/useAuth";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { login } from "../../services/auth";
+import { login } from "../services/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,11 +13,31 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { isAuthenticated, validateAuth, setTokens } = useAuth();
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (!error) return;
     const id = setTimeout(() => setError(""), 2000);
     return () => clearTimeout(id);
   }, [error]);
+
+  useEffect(() => {
+    const navigateIfAuthenticated = async () => {
+      const valid = await validateAuth();
+      if (valid) {
+        navigate("/");
+      }
+    };
+    navigateIfAuthenticated();
+  }, [navigate, validateAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [navigate, isAuthenticated]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -32,7 +54,7 @@ export default function Login() {
           full_access_token: result.full_access_token,
           limited_access_token: result.limited_access_token,
         };
-        console.log("Login successful, received tokens:", tokens);
+        await setTokens(tokens);
       }
     } catch {
       setError("Login failed");

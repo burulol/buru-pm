@@ -54,3 +54,17 @@ export async function login(email, password) {
 
   return { success: true, ...(await loginResponse.json()) };
 }
+
+export async function pingServer(token) {
+  try {
+    const response = await fetch(`${AUTH_URL}/validate`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
