@@ -172,3 +172,8 @@ async def delete_sessions(
         session.expires_at = datetime.now(timezone.utc)
 
     await db.commit()
+
+
+@router.get("/validate", status_code=200)
+async def ping(payload: dict = Depends(auth_service.require_limited_access)):
+    return {}
