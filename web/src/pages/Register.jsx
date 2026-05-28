@@ -84,7 +84,7 @@ export default function Register() {
 
   return (
     <div className="h-screen flex items-center justify-center bg-black text-white">
-      <div className="w-full max-w-sm p-8 space-y-8 shadow-lg border border-fuchsia-700/20 shadow-fuchsia-700/20 rounded-lg">
+      <div className="w-full max-w-sm p-8 space-y-8 shadow-lg rounded-lg">
         {/* Header */}
         <BigLock className="w-32 h-32 mx-auto" strokeWidth={0.25} />
 
