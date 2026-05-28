@@ -11,9 +11,9 @@ export function AuthProvider({ children }) {
   const [fullToken, setFullToken] = useState(
     sessionStorage.getItem("full_access_token"),
   );
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
-  async function setTokens(tokens) {
+  async function setAuth(tokens) {
     const { limited_access_token, full_access_token } = tokens;
 
     const isValid = await pingServer(limited_access_token);
@@ -25,12 +25,12 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem("limited_access_token", limited_access_token);
       sessionStorage.setItem("full_access_token", full_access_token);
     } else {
-      clearTokens();
+      clearAuth();
       setIsAuthenticated(false);
     }
   }
 
-  function clearTokens() {
+  function clearAuth() {
     sessionStorage.removeItem("limited_access_token");
     sessionStorage.removeItem("full_access_token");
     setIsAuthenticated(false);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
     const isValid = await pingServer(limitedToken);
 
     if (!isValid) {
-      clearTokens();
+      clearAuth();
       setIsAuthenticated(false);
       return false;
     }
@@ -54,12 +54,12 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        validateAuth,
+        isAuthenticated,
         limitedToken,
         fullToken,
-        setTokens,
-        clearTokens,
-        isAuthenticated,
+        validateAuth,
+        setAuth,
+        clearAuth,
       }}
     >
       {children}

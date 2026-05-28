@@ -15,7 +15,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { isAuthenticated, validateAuth, setTokens } = useAuth();
+  const { isAuthenticated, validateAuth, setAuth } = useAuth();
 
   const navigate = useNavigate();
 
@@ -69,7 +69,7 @@ export default function Register() {
           full_access_token: result.full_access_token,
           limited_access_token: result.limited_access_token,
         };
-        await setTokens(tokens);
+        await setAuth(tokens);
       }
     } catch {
       setError("Registration failed");
