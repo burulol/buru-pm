@@ -1,30 +1,39 @@
 import BigLock from "../../components/bigLock";
+import TextField from "../../components/authTextField";
+import SubmitBtn from "../../components/authSubmitErrBtn";
 import { useState, useEffect } from "react";
-import { Mail, Lock, Repeat2 } from "lucide-react";
 import { register } from "../../services/auth";
-
-function validateEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function validatePassword(value) {
-  return value.length >= 8;
-}
 
 export default function Register() {
   const [email, setEmail] = useState("");
+  const [invalidEmail, setInvalidEmail] = useState(false);
   const [password, setPassword] = useState("");
+  const [invalidPassword, setInvalidPassword] = useState(false);
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => setError(""), 2000);
-    return () => clearTimeout();
+    if (!error) return;
+    const id = setTimeout(() => setError(""), 2000);
+    return () => clearTimeout(id);
   }, [error]);
 
   async function handleRegister(e) {
     e.preventDefault();
+
+    if (password !== repeatPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (!email) {
+      setError("Email cannot be empty");
+      return;
+    }
+    if (!password) {
+      setError("Password cannot be empty");
+      return;
+    }
 
     setLoading(true);
 
@@ -47,77 +56,47 @@ export default function Register() {
     }
   }
 
-  const validInput =
-    validateEmail(email) &&
-    validatePassword(password) &&
-    password === repeatPassword;
+  const validInput = !invalidEmail && !invalidPassword;
+
+  const disableBtn = loading || !validInput || error;
 
   return (
     <div className="h-screen flex items-center justify-center bg-black text-white">
-      <div className="w-full max-w-sm p-8 space-y-8 shadow-md border border-fuchsia-700/20 shadow-fuchsia-700/20 rounded-lg">
+      <div className="w-full max-w-sm p-8 space-y-8 shadow-lg border border-fuchsia-700/20 shadow-fuchsia-700/20 rounded-lg">
         {/* Header */}
-        <div className="text-center space-y-3">
-          <BigLock className="text-fuchsia-700 w-32 h-32 mx-auto drop-shadow-[0_0_12px_rgba(192,38,211,0.25)]" />
-        </div>
+        <BigLock className="w-32 h-32 mx-auto" strokeWidth={0.25} />
 
         {/* Form */}
         <form className="space-y-4" onSubmit={handleRegister}>
           {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-700/60 w-4 h-4" />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/5 text-white placeholder-gray-500
-                         focus:outline-none focus:ring-1 focus:ring-fuchsia-700/60 transition"
-            />
-          </div>
+          <TextField
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onInvalid={setInvalidEmail}
+          />
 
           {/* Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-700/60 w-4 h-4" />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/5 text-white placeholder-gray-500
-                         focus:outline-none focus:ring-1 focus:ring-fuchsia-700/60 transition"
-            />
-          </div>
+          <TextField
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onInvalid={setInvalidPassword}
+          />
 
           {/* Repeat password */}
-          <div className="relative">
-            <Repeat2 className="absolute left-3 top-1/2 -translate-y-1/2 text-fuchsia-700/60 w-5 h-5" />
-            <input
-              type="password"
-              placeholder="Repeat Password"
-              value={repeatPassword}
-              onChange={(e) => setRepeatPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/5 text-white placeholder-gray-500
-                         focus:outline-none focus:ring-1 focus:ring-fuchsia-700/60 transition"
-            />
-          </div>
-
-          {/* Error message */}
+          <TextField
+            type="repeat_password"
+            placeholder="Repeat Password"
+            value={repeatPassword}
+            onChange={(e) => setRepeatPassword(e.target.value)}
+          />
 
           {/* Button */}
           <div className="space-y-3 pt-2">
-            <button
-              type="submit"
-              disabled={loading || !validInput || error}
-              className={`w-full py-2 rounded-lg bg-fuchsia-700 text-black font-medium
-                                ${loading || !validInput || error ? "opacity-70" : "hover:bg-fuchsia-600 transition"}
-                                ${error || password !== repeatPassword ? "bg-red-500" : ""}`}
-            >
-              {error
-                ? error
-                : password !== repeatPassword
-                  ? "Passwords do not match"
-                  : "Register"}
-            </button>
+            <SubmitBtn text="Register" disabled={disableBtn} error={error} />
           </div>
         </form>
       </div>

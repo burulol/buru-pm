@@ -1,12 +1,15 @@
 export default function BigLock(props) {
+  const { className, strokeWidth, ...rest } = props;
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
-      strokeWidth={0.25}
+      strokeWidth={strokeWidth || 1.5}
       stroke="currentColor"
-      {...props}
+      className={`text-fuchsia-700 drop-shadow-[0_0_12px_rgba(192,38,211,0.25)] ${className || ""}`}
+      {...rest}
     >
       <path
         strokeLinecap="round"
