@@ -1,17 +1,17 @@
-import argon2 from "argon2-browser";
+import { argon2id } from "hash-wasm";
 
 async function deriveKey(password, salt, purpose) {
-  const result = await argon2.hash({
-    pass: password + purpose,
-    salt: salt,
-    type: argon2.ArgonType.Argon2id,
-    mem: 65536,
-    time: 3,
+  const result = await argon2id({
+    password: password + purpose,
+    salt,
     parallelism: 1,
-    hashLen: 32,
+    iterations: 3,
+    memorySize: 65536,
+    hashLength: 32,
+    outputType: "binary",
   });
 
-  return result.hash;
+  return result;
 }
 
 async function importEncryptionKey(keyBytes) {
@@ -33,6 +33,19 @@ function hexToBytes(hex) {
     bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
   }
   return bytes;
+}
+
+function arrayBufferToBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
 }
 
 function getSalt() {
@@ -60,14 +73,18 @@ export async function encrypt(text, encryptionKey) {
     encryptionKey,
     new TextEncoder().encode(text),
   );
-  return { iv, ciphertext };
+
+  return {
+    iv: arrayBufferToBase64(iv),
+    ciphertext: arrayBufferToBase64(ciphertext),
+  };
 }
 
 export async function decrypt({ iv, ciphertext }, encryptionKey) {
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: base64ToArrayBuffer(iv) },
     encryptionKey,
-    ciphertext,
+    base64ToArrayBuffer(ciphertext),
   );
   return new TextDecoder().decode(decrypted);
 }
