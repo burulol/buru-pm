@@ -5,6 +5,7 @@ const AuthContext = createContext();
 export { AuthContext };
 
 export function AuthProvider({ children }) {
+  const [salt, setSalt] = useState(sessionStorage.getItem("salt"));
   const [limitedToken, setLimitedToken] = useState(
     sessionStorage.getItem("limited_access_token"),
   );
@@ -14,14 +15,16 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   async function setAuth(tokens) {
-    const { limited_access_token, full_access_token } = tokens;
+    const { salt, limited_access_token, full_access_token } = tokens;
 
     const isValid = await pingServer(limited_access_token);
 
     if (isValid) {
       setIsAuthenticated(true);
+      setSalt(salt);
       setLimitedToken(limited_access_token);
       setFullToken(full_access_token);
+      sessionStorage.setItem("salt", salt);
       sessionStorage.setItem("limited_access_token", limited_access_token);
       sessionStorage.setItem("full_access_token", full_access_token);
     } else {
@@ -31,6 +34,7 @@ export function AuthProvider({ children }) {
   }
 
   function clearAuth() {
+    sessionStorage.removeItem("salt");
     sessionStorage.removeItem("limited_access_token");
     sessionStorage.removeItem("full_access_token");
     setIsAuthenticated(false);
@@ -39,7 +43,7 @@ export function AuthProvider({ children }) {
   }
 
   async function validateAuth() {
-    if (!limitedToken) return false;
+    if (!salt || !limitedToken || !fullToken) return false;
     const isValid = await pingServer(limitedToken);
 
     if (!isValid) {
@@ -55,6 +59,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         isAuthenticated,
+        salt,
         limitedToken,
         fullToken,
         validateAuth,

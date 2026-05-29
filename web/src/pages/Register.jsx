@@ -66,8 +66,9 @@ export default function Register() {
         setError(result.error);
       } else {
         const tokens = {
-          full_access_token: result.full_access_token,
+          salt: result.salt,
           limited_access_token: result.limited_access_token,
+          full_access_token: result.full_access_token,
         };
         await setAuth(tokens);
       }

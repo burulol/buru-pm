@@ -90,8 +90,9 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     return {
-        "full_access_token": full_access_token,
+        "salt": user.salt,
         "limited_access_token": limited_access_token,
+        "full_access_token": full_access_token,
     }
 
 
