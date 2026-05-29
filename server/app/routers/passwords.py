@@ -43,6 +43,7 @@ async def create_password(
         platform=body.platform,
         username=body.username,
         password=body.password,
+        iv=body.iv,
     )
 
     db.add(new_password)
@@ -75,7 +76,7 @@ async def get_password(
     if not entry:
         raise HTTPException(status_code=404, detail="Password not found")
 
-    return {"password": entry.password}
+    return {"password": entry.password, "iv": entry.iv}
 
 
 @router.patch("", status_code=204)
@@ -102,6 +103,7 @@ async def update_password(
         raise HTTPException(status_code=404, detail="Password not found")
 
     entry.password = body.password
+    entry.iv = body.iv
     await db.commit()
 
 

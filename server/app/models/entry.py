@@ -17,6 +17,7 @@ class Entry(Base):
     platform: Mapped[str] = mapped_column(String, nullable=False)
     username: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=True)
+    iv: Mapped[str] = mapped_column(String, nullable=True)
 
     user = relationship("User", back_populates="entries")
 

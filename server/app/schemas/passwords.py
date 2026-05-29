@@ -5,6 +5,7 @@ class PasswordCreateRequest(BaseModel):
     platform: str
     username: str
     password: str
+    iv: str
 
 
 class PasswordDeleteRequest(BaseModel):
