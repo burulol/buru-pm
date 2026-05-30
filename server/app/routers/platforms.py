@@ -18,8 +18,25 @@ async def list_platforms(
     user_id = payload.get("sub")
 
     result = await db.execute(
-        select(Entry.platform, Entry.username).where(Entry.user_id == user_id)
+        select(
+            Entry.id,
+            Entry.platform,
+            Entry.username,
+            Entry.url,
+            Entry.tag,
+            Entry.modified_at,
+        ).where(Entry.user_id == user_id)
     )
-    platforms = [{"platform": row[0], "username": row[1]} for row in result]
+    platforms = [
+        {
+            "id": row[0],
+            "platform": row[1],
+            "username": row[2],
+            "url": row[3],
+            "tag": row[4],
+            "modified_at": row[5],
+        }
+        for row in result
+    ]
 
     return {"platforms": platforms}
