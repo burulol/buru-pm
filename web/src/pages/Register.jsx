@@ -70,7 +70,7 @@ export default function Register() {
           limited_access_token: result.limited_access_token,
           full_access_token: result.full_access_token,
         };
-        await setAuth(tokens);
+        await setAuth(tokens, password);
       }
     } catch {
       setError("Registration failed");

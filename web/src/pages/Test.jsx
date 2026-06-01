@@ -1,51 +1,46 @@
-import { useState } from "react";
-import { deriveEncryptionKey, encrypt } from "../services/crypto";
+import PasswordCard from "../components/PasswordCard";
+import { useState, useEffect } from "react";
+import useAuth from "../hooks/useAuth";
+import { getAllPasswords } from "../services/vault";
 
 export default function Test() {
-  const [mpassword, setMPassword] = useState("");
-  const [password, setPassword] = useState("");
-  const [ciphertext, setCiphertext] = useState("");
+  const [passwords, setPasswords] = useState([]);
+  const { limitedToken } = useAuth();
 
-  async function getEncrypted() {
-    let result = await encrypt(password, await deriveEncryptionKey(mpassword));
-
-    console.log(result);
-
-    return result.ciphertext.toString();
-    // return mpassword + " " + password;
+  async function fetchPasswords() {
+    if (!limitedToken) return;
+    const result = await getAllPasswords(limitedToken);
+    setPasswords(result);
   }
 
-  function handleClick() {
-    setCiphertext(getEncrypted());
-  }
+  useEffect(() => {
+    async function fetch() {
+      if (!limitedToken) return;
+      const result = await getAllPasswords(limitedToken);
+      setPasswords(result);
+    }
+
+    fetch();
+  }, [limitedToken]);
 
   return (
     <div className="flex justify-center items-center h-screen">
-      <div className="max-w-sm w-full border border-white space-y-3 p-4 rounded-lg flex flex-col justify-center">
-        <h1 className="text-white">Vault test</h1>
-        <label className="block text-sm font-medium text-white">
-          Master Password:
-          <input
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:border-blue-500"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm font-medium text-white">
-          Master Password:
-          <input
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:border-blue-500"
-            value={mpassword}
-            onChange={(e) => setMPassword(e.target.value)}
-          />
-        </label>
-        <button
-          className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-          onClick={handleClick}
-        >
-          Encrypt
-        </button>
-        <p className="text-sm text-gray-300">{ciphertext}</p>
+      <div className="max-w-6xl w-full border border-white space-y-3 p-4 rounded-lg justify-center h-3/4">
+        <div className="flex flex-col space-y-2 p-4">
+          {passwords.length > 0 ? (
+            passwords.map((entry) => (
+              <PasswordCard
+                key={entry.id}
+                {...entry}
+                refresh={fetchPasswords}
+              />
+            ))
+          ) : (
+            <h2 className="font-semibold text-2xl text-white">
+              No passwords found.
+            </h2>
+          )}
+        </div>
       </div>
     </div>
   );

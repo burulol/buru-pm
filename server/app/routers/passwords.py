@@ -94,7 +94,7 @@ async def update_password(
         select(Entry).where(
             and_(
                 Entry.user_id == uuid.UUID(user_id),
-                Entry.id == body.entry_id,
+                Entry.id == body.id,
             )
         )
     )
@@ -116,7 +116,7 @@ async def update_password(
                     Entry.user_id == uuid.UUID(user_id),
                     Entry.platform == checked_platform,
                     Entry.username == checked_username,
-                    Entry.id != body.entry_id,
+                    Entry.id != body.id,
                 )
             )
         )

@@ -176,5 +176,14 @@ async def delete_sessions(
 
 
 @router.get("/validate", status_code=200)
-async def ping(payload: dict = Depends(auth_service.require_limited_access)):
+async def ping(
+    payload: dict = Depends(auth_service.require_limited_access),
+    db: AsyncSession = Depends(get_db),
+):
+
+    user = await db.execute(select(User).where(User.id == payload["sub"]))
+
+    if not user.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="User not found")
+
     return {}

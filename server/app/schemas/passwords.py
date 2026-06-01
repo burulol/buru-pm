@@ -13,7 +13,7 @@ class PasswordCreateRequest(BaseModel):
 
 
 class PasswordPatchRequest(BaseModel):
-    entry_id: uuid.UUID
+    id: uuid.UUID
     platform: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None

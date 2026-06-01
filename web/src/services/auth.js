@@ -1,4 +1,4 @@
-const AUTH_URL = "http://127.0.0.1:8000/auth";
+import { deriveAuthKey } from "./crypto";
 
 function getDevice() {
   let device = localStorage.getItem("device_name");
@@ -12,12 +12,15 @@ function getDevice() {
 }
 
 export async function register(email, password) {
-  const registerResponse = await fetch(`${AUTH_URL}/register`, {
+  const registerResponse = await fetch(`/api/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, auth_key: password }),
+    body: JSON.stringify({
+      email,
+      auth_key: await deriveAuthKey(email, password),
+    }),
   });
 
   if (!registerResponse.ok) {
@@ -26,24 +29,32 @@ export async function register(email, password) {
     }
   }
 
-  const loginResponse = await fetch(`${AUTH_URL}/login`, {
+  const loginResponse = await fetch(`/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, auth_key: password, device: getDevice() }),
+    body: JSON.stringify({
+      email,
+      auth_key: await deriveAuthKey(email, password),
+      device: getDevice(),
+    }),
   });
 
   return { success: true, ...(await loginResponse.json()) };
 }
 
 export async function login(email, password) {
-  const loginResponse = await fetch(`${AUTH_URL}/login`, {
+  const loginResponse = await fetch(`/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, auth_key: password, device: getDevice() }),
+    body: JSON.stringify({
+      email,
+      auth_key: await deriveAuthKey(email, password),
+      device: getDevice(),
+    }),
   });
 
   if (!loginResponse.ok) {
@@ -57,7 +68,7 @@ export async function login(email, password) {
 
 export async function pingServer(token) {
   try {
-    const response = await fetch(`${AUTH_URL}/validate`, {
+    const response = await fetch(`/api/auth/validate`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

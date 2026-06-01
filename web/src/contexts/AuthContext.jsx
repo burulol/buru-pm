@@ -1,5 +1,6 @@
 import { createContext, useState } from "react";
 import { pingServer } from "../services/auth";
+import { encrypt, deriveEncryptionKey } from "../services/crypto";
 
 const AuthContext = createContext();
 export { AuthContext };
@@ -14,7 +15,7 @@ export function AuthProvider({ children }) {
   );
   const [isAuthenticated, setIsAuthenticated] = useState(null);
 
-  async function setAuth(tokens) {
+  async function setAuth(tokens, master_password) {
     const { salt, limited_access_token, full_access_token } = tokens;
 
     const isValid = await pingServer(limited_access_token);
@@ -23,10 +24,18 @@ export function AuthProvider({ children }) {
       setIsAuthenticated(true);
       setSalt(salt);
       setLimitedToken(limited_access_token);
-      setFullToken(full_access_token);
       sessionStorage.setItem("salt", salt);
       sessionStorage.setItem("limited_access_token", limited_access_token);
-      sessionStorage.setItem("full_access_token", full_access_token);
+
+      const encryptedToken = await encrypt(
+        full_access_token,
+        await deriveEncryptionKey(master_password),
+      );
+      setFullToken(encryptedToken.iv + ":" + encryptedToken.ciphertext);
+      sessionStorage.setItem(
+        "full_access_token",
+        encryptedToken.iv + ":" + encryptedToken.ciphertext,
+      );
     } else {
       clearAuth();
       setIsAuthenticated(false);
@@ -43,7 +52,11 @@ export function AuthProvider({ children }) {
   }
 
   async function validateAuth() {
-    if (!salt || !limitedToken || !fullToken) return false;
+    if (!salt || !limitedToken || !fullToken) {
+      clearAuth();
+      setIsAuthenticated(false);
+      return false;
+    }
     const isValid = await pingServer(limitedToken);
 
     if (!isValid) {

@@ -54,9 +54,16 @@ function getSalt() {
   return hexToBytes(salt);
 }
 
-export async function deriveAuthKey(password) {
-  const salt = getSalt();
-  const keyBytes = await deriveKey(password, salt, "auth");
+export async function deriveAuthKey(email, password) {
+  const response = await fetch("/api/auth/salt", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json();
+  const keyBytes = await deriveKey(password, hexToBytes(data.salt), "auth");
   return toHex(keyBytes);
 }
 
@@ -87,4 +94,12 @@ export async function decrypt({ iv, ciphertext }, encryptionKey) {
     base64ToArrayBuffer(ciphertext),
   );
   return new TextDecoder().decode(decrypted);
+}
+
+export async function getFullAccessToken(masterPassword) {
+  const encryptedToken = sessionStorage.getItem("full_access_token");
+  const [iv, ciphertext] = encryptedToken.split(":");
+  const encryptionKey = await deriveEncryptionKey(masterPassword);
+  const decryptedToken = await decrypt({ iv, ciphertext }, encryptionKey);
+  return decryptedToken;
 }
