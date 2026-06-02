@@ -1,4 +1,13 @@
-import { Lock, SquarePen, Trash, PenOff, Eye, EyeOff } from "lucide-react";
+import {
+  Lock,
+  SquarePen,
+  Trash,
+  PenOff,
+  Eye,
+  EyeOff,
+  Check,
+  Copy,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPassword, updatePassword, deletePassword } from "../services/vault";
 import VariableSizeInput from "./VariableSizeInput";
@@ -13,10 +22,22 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
     tag: initial_entry.tag || "",
     url: initial_entry.url || "",
   });
-
   const [snapshot, setSnapshot] = useState(initial_entry);
   const [editing, setEditing] = useState(false);
   const { prompt, submitPrompt, cancelPrompt, isPrompting } = usePrompt();
+
+  useEffect(() => {
+    const refresh = async () => {
+      setEntry({
+        ...initial_entry,
+        tag: initial_entry.tag || "",
+        url: initial_entry.url || "",
+      });
+      setSnapshot(initial_entry);
+    };
+
+    refresh();
+  }, [initial_entry.modified_at]);
 
   const handleEditToggle = async (e) => {
     if (e) e.preventDefault();
@@ -63,7 +84,8 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
       />
       <form
         onSubmit={handleEditToggle}
-        className="flex justify-between bg-fuchsia-950/20 border border-fuchsia-800/30 rounded-lg hover:border-fuchsia-600/50 transition-colors h-fit py-4"
+        className={`flex justify-between border transition-colors h-fit py-4  rounded-lg
+          ${editing ? "bg-amber-950/20 border-amber-800/30 hover:border-amber-600/50" : "bg-fuchsia-950/20 border-fuchsia-800/30  hover:border-fuchsia-600/50"} `}
       >
         <div className="h-full w-1/16 min-w-2">
           <Lock size={22} className="text-fuchsia-500 mx-auto mt-0.75" />
@@ -173,10 +195,16 @@ function PasswordField({ editing, entry, prompt }) {
   const [fetchedPassword, setFetchedPassword] = useState(placeholder);
   const [key, setKey] = useState(null);
   const [ref, setRef] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const hidePassword = async () => {
     setShowPassword(false);
-    if (value === fetchedPassword || key === null) return;
+    if (value === fetchedPassword || key === null) {
+      setFetchedPassword("");
+      setValue(placeholder);
+      setShowPassword(false);
+      return;
+    }
     const newEntry = { password: value, ...entry };
     try {
       const { masterPassword, fullToken } = key;
@@ -193,10 +221,10 @@ function PasswordField({ editing, entry, prompt }) {
 
   useEffect(() => {
     if (!editing) {
-      const asyncHidePassword = async () => {
+      const cleanUp = async () => {
         hidePassword();
       };
-      asyncHidePassword();
+      cleanUp();
     }
   }, [editing]);
 
@@ -224,6 +252,22 @@ function PasswordField({ editing, entry, prompt }) {
     }
   }
 
+  const handleCopy = async () => {
+    try {
+      const { masterPassword, fullToken } = await prompt();
+      const password = await getPassword(
+        { platform: entry.platform, username: entry.username },
+        fullToken,
+        masterPassword,
+      );
+      navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    } catch {
+      return;
+    }
+  };
+
   return (
     <div className="flex items-center w-full">
       <span className="text-xs text-gray-400 w-24">Password:</span>
@@ -243,7 +287,15 @@ function PasswordField({ editing, entry, prompt }) {
       >
         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
-      <CopyButton value={value} />
+      {!editing && (
+        <button
+          type="button"
+          className={`ml-4 ${copied ? "text-green-500" : "text-fuchsia-500 hover:text-fuchsia-400"} focus:outline-none transition-all`}
+          onClick={handleCopy}
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
+        </button>
+      )}
     </div>
   );
 }

@@ -5,7 +5,8 @@ import "./index.css";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
-import Test from "./pages/Test.jsx";
+import Vault from "./pages/Vault.jsx";
+import Account from "./pages/Account.jsx";
 import ProtectedRoute from "./components/protectedRoute.jsx";
 
 createRoot(document.getElementById("root")).render(
@@ -16,14 +17,22 @@ createRoot(document.getElementById("root")).render(
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
-            path="/test"
+            path="/vault"
             element={
               <ProtectedRoute>
-                <Test />
+                <Vault />
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/test" />} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/vault" />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
