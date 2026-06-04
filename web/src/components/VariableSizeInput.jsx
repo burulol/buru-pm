@@ -23,7 +23,7 @@ export default function VariableSizeInput({ setRef, ...props }) {
         ref={spanRef}
         className={"absolute invisible whitespace-pre " + props.className}
       >
-        {props.value}
+        {props.value ? props.value : props.placeholder ? props.placeholder : ""}
       </span>
       <input ref={inputRef} {...props} />
     </>

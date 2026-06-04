@@ -33,7 +33,11 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
         tag: initial_entry.tag || "",
         url: initial_entry.url || "",
       });
-      setSnapshot(initial_entry);
+      setSnapshot({
+        ...initial_entry,
+        tag: initial_entry.tag || "",
+        url: initial_entry.url || "",
+      });
     };
 
     refresh();
@@ -83,9 +87,9 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
         onCancel={cancelPrompt}
       />
       <form
-        onSubmit={handleEditToggle}
         className={`flex justify-between border transition-colors h-fit py-4  rounded-lg
           ${editing ? "bg-amber-950/20 border-amber-800/30 hover:border-amber-600/50" : "bg-fuchsia-950/20 border-fuchsia-800/30  hover:border-fuchsia-600/50"} `}
+        onSubmit={handleEditToggle}
       >
         <div className="h-full w-1/16 min-w-2">
           <Lock size={22} className="text-fuchsia-500 mx-auto mt-0.75" />
@@ -117,6 +121,7 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
               editing={editing}
               setValue={(value) => setEntry({ ...entry, url: value })}
             />
+
             <div className="flex items-center w-full">
               <span className="text-xs text-gray-400 w-24">Modified:</span>
               <span className="text-xs text-gray-500">
@@ -135,7 +140,10 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
           >
             {editing ? <PenOff size={20} /> : <SquarePen size={20} />}
           </button>
-          <button className="flex flex-col items-center text-sm text-gray-400 hover:text-gray-200 transition-colors h-fit outline-none">
+          <button
+            type="button"
+            className="flex flex-col items-center text-sm text-gray-400 hover:text-gray-200 transition-colors h-fit outline-none"
+          >
             <Trash size={20} onClick={handleDelete} />
           </button>
         </div>
@@ -162,6 +170,7 @@ function TagField({ value, editing, setValue }) {
   return (
     <VariableSizeInput
       value={value ? value : ""}
+      placeholder="Tag"
       readOnly={!editing}
       onChange={(e) => setValue(e.target.value)}
       className={`px-2 py-1 bg-fuchsia-900/30 text-fuchsia-400 text-xs rounded w-fit inline-block focus:outline-none
@@ -322,6 +331,7 @@ function URLField({ value, editing, setValue }) {
           value={value ? value : ""}
           readOnly={!editing}
           onChange={(e) => setValue(e.target.value)}
+          placeholder="URL"
         />
       )}
     </div>

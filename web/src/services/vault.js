@@ -13,8 +13,6 @@ export async function savePassword(entry, fullToken, masterPassword) {
     entry.iv = iv;
   }
 
-  console.log(entry);
-
   const response = await fetch("/api/passwords", {
     method: "POST",
     headers: {
