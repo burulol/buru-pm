@@ -199,7 +199,7 @@ function UsernameField({ value, editing, setValue }) {
 function PasswordField({ editing, entry, prompt }) {
   const placeholder = "placeholder";
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [isShowingPassword, setShowingPassword] = useState(false);
   const [value, setValue] = useState(placeholder);
   const [fetchedPassword, setFetchedPassword] = useState(placeholder);
   const [key, setKey] = useState(null);
@@ -207,24 +207,36 @@ function PasswordField({ editing, entry, prompt }) {
   const [copied, setCopied] = useState(false);
 
   const hidePassword = async () => {
-    setShowPassword(false);
+    setShowingPassword(false);
+    setFetchedPassword("");
+    setValue(placeholder);
+    setShowingPassword(false);
+    setKey(null);
     if (value === fetchedPassword || key === null) {
-      setFetchedPassword("");
-      setValue(placeholder);
-      setShowPassword(false);
       return;
     }
     const newEntry = { password: value, ...entry };
     try {
       const { masterPassword, fullToken } = key;
-      setKey(null);
       await updatePassword(newEntry, fullToken, masterPassword);
     } catch {
       return;
-    } finally {
-      setFetchedPassword("");
-      setValue(placeholder);
-      setShowPassword(false);
+    }
+  };
+
+  const showPassword = async () => {
+    try {
+      const { masterPassword, fullToken } = await prompt();
+      const password = await getPassword(entry, fullToken, masterPassword);
+      setKey({ masterPassword, fullToken });
+      setFetchedPassword(password);
+      setValue(password);
+      setShowingPassword(true);
+      if (ref) {
+        ref.focus();
+      }
+    } catch {
+      return;
     }
   };
 
@@ -237,25 +249,9 @@ function PasswordField({ editing, entry, prompt }) {
     }
   }, [editing]);
 
-  async function handleShowPasswordToggle() {
-    if (!showPassword) {
-      try {
-        const { masterPassword, fullToken } = await prompt();
-        const password = await getPassword(
-          { platform: entry.platform, username: entry.username },
-          fullToken,
-          masterPassword,
-        );
-        setKey({ masterPassword, fullToken });
-        setFetchedPassword(password);
-        setValue(password);
-        setShowPassword(true);
-        if (ref) {
-          ref.focus();
-        }
-      } catch {
-        return;
-      }
+  function handleShowPasswordToggle() {
+    if (!isShowingPassword) {
+      showPassword();
     } else {
       hidePassword();
     }
@@ -264,11 +260,7 @@ function PasswordField({ editing, entry, prompt }) {
   const handleCopy = async () => {
     try {
       const { masterPassword, fullToken } = await prompt();
-      const password = await getPassword(
-        { platform: entry.platform, username: entry.username },
-        fullToken,
-        masterPassword,
-      );
+      const password = await getPassword(entry, fullToken, masterPassword);
       navigator.clipboard.writeText(password);
       setCopied(true);
       setTimeout(() => setCopied(false), 1000);
@@ -282,11 +274,11 @@ function PasswordField({ editing, entry, prompt }) {
       <span className="text-xs text-gray-400 w-24">Password:</span>
       <VariableSizeInput
         setRef={setRef}
-        type={showPassword ? "text" : "password"}
+        type={isShowingPassword ? "text" : "password"}
         className={`text-sm w-fit focus:outline-none text-gray-200 bg-transparent border-b
-          ${editing && showPassword ? "cursor-text border-fuchsia-800 focus:border-fuchsia-500 hover:border-fuchsia-500" : "border-transparent cursor-default"}`}
-        value={showPassword ? value : "placeholder"}
-        readOnly={!(editing && showPassword)}
+          ${editing && isShowingPassword ? "cursor-text border-fuchsia-800 focus:border-fuchsia-500 hover:border-fuchsia-500" : "border-transparent cursor-default"}`}
+        value={value}
+        readOnly={!(editing && isShowingPassword)}
         onChange={(e) => setValue(e.target.value)}
       />
       <button
@@ -294,7 +286,7 @@ function PasswordField({ editing, entry, prompt }) {
         className="ml-4 text-fuchsia-500 hover:text-fuchsia-400 focus:outline-none"
         onClick={handleShowPasswordToggle}
       >
-        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+        {isShowingPassword ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
       {!editing && (
         <button

@@ -28,6 +28,8 @@ export default function TextField({
 
   const invalid = isInvalid !== undefined ? isInvalid : !validationFunc(value);
 
+  const htmlType = type === "repeat_password" ? "password" : type;
+
   return (
     <div className="relative">
       {type === "email" && (
@@ -41,12 +43,7 @@ export default function TextField({
       )}
       <input
         ref={ref}
-        type={
-          (type === "repeat_password" ? "password" : type) === "password" &&
-          showPassword
-            ? "text"
-            : type
-        }
+        type={htmlType === "password" && showPassword ? "text" : htmlType}
         placeholder={placeholder}
         value={value}
         onChange={(e) => {

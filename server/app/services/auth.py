@@ -12,11 +12,16 @@ import hashlib
 
 
 def hash(value: str) -> str:
-    return hashlib.sha256(value.encode()).hexdigest()
+    return hmac.new(
+        settings.SECRET_KEY.encode(), value.encode(), hashlib.sha256
+    ).hexdigest()
 
 
 def verify(plain: str, hashed: str) -> bool:
-    return hashlib.sha256(plain.encode()).hexdigest() == hashed
+    expected = hmac.new(
+        settings.SECRET_KEY.encode(), plain.encode(), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, hashed)
 
 
 def create_full_access_token(user_id: str) -> str:

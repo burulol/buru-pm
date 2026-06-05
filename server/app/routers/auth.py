@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -16,14 +16,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select
 from app.database import get_db
 from app.config import settings
+from app.limiter import limiter
 
 router = APIRouter()
 
-fake_user_db: dict = {}
-
 
 @router.post("/register", status_code=201)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(
+    request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)
+):
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -44,7 +46,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", status_code=200)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(
+    request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)
+):
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -97,7 +102,10 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/salt", status_code=200)
-async def get_salt(body: SaltRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("20/minute")
+async def get_salt(
+    request: Request, body: SaltRequest, db: AsyncSession = Depends(get_db)
+):
 
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()

@@ -54,10 +54,9 @@ async def create_password(
     return {}
 
 
-@router.get("/{platform}/{username}", status_code=200)
+@router.get("/{id}", status_code=200)
 async def get_password(
-    platform: str,
-    username: str,
+    id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     payload: dict = Depends(auth_service.require_full_access),
 ):
@@ -68,8 +67,7 @@ async def get_password(
         select(Entry).where(
             and_(
                 Entry.user_id == uuid.UUID(user_id),
-                Entry.platform == platform,
-                Entry.username == username,
+                Entry.id == id,
             )
         )
     )
@@ -144,10 +142,9 @@ async def update_password(
     await db.commit()
 
 
-@router.delete("/{platform}/{username}", status_code=204)
+@router.delete("/{id}", status_code=204)
 async def delete_password(
-    platform: str,
-    username: str,
+    id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     payload: dict = Depends(auth_service.require_full_access),
 ):
@@ -158,8 +155,7 @@ async def delete_password(
         select(Entry).where(
             and_(
                 Entry.user_id == uuid.UUID(user_id),
-                Entry.platform == platform,
-                Entry.username == username,
+                Entry.id == id,
             )
         )
     )

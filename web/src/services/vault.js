@@ -27,12 +27,8 @@ export async function savePassword(entry, fullToken, masterPassword) {
   }
 }
 
-export async function getPassword(
-  { platform, username },
-  fullToken,
-  masterPassword,
-) {
-  const response = await fetch(`/api/passwords/${platform}/${username}`, {
+export async function getPassword({ id }, fullToken, masterPassword) {
+  const response = await fetch(`/api/passwords/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -75,17 +71,13 @@ export async function updatePassword(entry, fullToken, masterPassword) {
   }
 }
 
-export async function deletePassword({ platform, username }, fullToken) {
-  const response = await fetch(`/api/passwords/${platform}/${username}`, {
+export async function deletePassword({ id }, fullToken) {
+  const response = await fetch(`/api/passwords/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${fullToken}`,
     },
-    body: JSON.stringify({
-      platform,
-      username,
-    }),
   });
 
   if (!response.ok) {
