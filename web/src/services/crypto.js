@@ -109,3 +109,27 @@ export async function getFullAccessToken(masterPassword) {
   const decryptedToken = await decrypt({ iv, ciphertext }, encryptionKey);
   return decryptedToken;
 }
+
+export function generatePassword(length, chars) {
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const numbers = "0123456789";
+  const special = "!@#$%^&*()_+|}{[]:;?><,./-=";
+
+  let charset = upper + lower + numbers + (chars ? special : "");
+
+  let generated = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    generated += charset[randomIndex];
+  }
+
+  if (chars && !/[!@#$%^&*()_+|}{[\]:;?><,./-=]/.test(generated)) {
+    generated = generated.split("");
+    generated[Math.floor(Math.random() * generated.length)] =
+      special[Math.floor(Math.random() * special.length)];
+    generated = generated.join("");
+  }
+
+  return generated;
+}

@@ -7,6 +7,7 @@ import { getAllPasswords, savePassword } from "../services/vault";
 import Layout from "../components/Layout";
 import VariableSizeInput from "../components/VariableSizeInput";
 import { Lock, Plus, Search, Check, X, Eye, EyeOff } from "lucide-react";
+import { generatePassword } from "../services/crypto";
 
 export default function Vault() {
   const [passwords, setPasswords] = useState([]);
@@ -114,12 +115,19 @@ function NewPassword({ setFormActive, refresh, passwords }) {
   const [entry, setEntry] = useState({
     platform: "",
     username: "",
-    password: "",
+    password: generatePassword(8, true),
     tag: "",
     url: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [passwordLength, setPasswordLength] = useState(8);
+  const [includeSpecialChars, setIncludeSpecialChars] = useState(true);
+
+  const fillInGeneratedPassword = (length, chars) => {
+    const generated = generatePassword(length, chars);
+    setEntry({ ...entry, password: generated });
+  };
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -262,6 +270,46 @@ function NewPassword({ setFormActive, refresh, passwords }) {
                 placeholder="URL"
                 onChange={(e) => setEntry({ ...entry, url: e.target.value })}
               />
+            </div>
+            <div className="flex items-center w-full space-x-4">
+              <span className="text-xs text-gray-400 w-24">
+                Generate password
+              </span>
+              <input
+                type="range"
+                min={8}
+                max={32}
+                value={passwordLength}
+                onChange={(e) => {
+                  setPasswordLength(Number(e.target.value));
+                  fillInGeneratedPassword(
+                    Number(e.target.value),
+                    includeSpecialChars,
+                  );
+                }}
+                className="w-28 h-1 appearance-none rounded-full outline-none cursor-pointer accent-gray-400 bg-green-500/80 -ml-4"
+              />
+              <span className="text-xs text-gray-500 w-2">
+                {passwordLength}
+              </span>
+              <div className="flex items-center space-x-1.5">
+                <div
+                  onClick={() => {
+                    setIncludeSpecialChars(!includeSpecialChars);
+                    fillInGeneratedPassword(
+                      passwordLength,
+                      !includeSpecialChars,
+                    );
+                  }}
+                  className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center cursor-pointer transition-colors shrink-0
+                    ${includeSpecialChars ? "bg-green-600 border-green-500" : "bg-transparent border-green-800 hover:border-green-600"}`}
+                >
+                  {includeSpecialChars && (
+                    <Check size={12} className="text-black" strokeWidth={3} />
+                  )}
+                </div>
+                <span className="text-xs text-gray-400">Characters</span>
+              </div>
             </div>
           </div>
         </div>

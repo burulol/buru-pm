@@ -258,8 +258,15 @@ function PasswordField({ editing, entry, prompt }) {
   }
 
   const handleCopy = async () => {
+    if (isShowingPassword) {
+      navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+      return;
+    }
+
     try {
-      const { masterPassword, fullToken } = await prompt();
+      const { masterPassword, fullToken } = key === null ? await prompt() : key;
       const password = await getPassword(entry, fullToken, masterPassword);
       navigator.clipboard.writeText(password);
       setCopied(true);
