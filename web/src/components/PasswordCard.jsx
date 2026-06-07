@@ -2,11 +2,11 @@ import {
   Lock,
   SquarePen,
   Trash,
-  PenOff,
   Eye,
   EyeOff,
   Check,
   Copy,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPassword, updatePassword, deletePassword } from "../services/vault";
@@ -15,6 +15,7 @@ import CopyButton from "./CopyButton";
 import { formatDistanceToNow } from "date-fns";
 import usePrompt from "../hooks/usePrompt";
 import MasterPasswordPrompt from "./MasterPasswordPrompt";
+import { generatePassword } from "../services/crypto";
 
 export default function PasswordCard({ refresh, ...initial_entry }) {
   const [entry, setEntry] = useState({
@@ -24,6 +25,7 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
   });
   const [snapshot, setSnapshot] = useState(initial_entry);
   const [editing, setEditing] = useState(false);
+  const [key, setKey] = useState(null);
   const { prompt, submitPrompt, cancelPrompt, isPrompting } = usePrompt();
 
   useEffect(() => {
@@ -43,29 +45,54 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
     refresh();
   }, [initial_entry.modified_at]);
 
+  const cleanUp = () => {
+    setEntry((prev) => ({ ...prev, password: null }));
+    setSnapshot(null);
+    setKey(null);
+  };
+
+  const revertChanges = () => {
+    setEntry({ ...snapshot, password: null });
+    setSnapshot({ ...snapshot, password: null });
+    setKey(null);
+  };
+
   const handleEditToggle = async (e) => {
     if (e) e.preventDefault();
 
     if (!editing) {
-      setSnapshot({ ...entry });
-      setEditing(true);
+      try {
+        console.log(key === null);
+        const { fullToken, masterPassword } =
+          key === null ? await prompt() : key;
+        const password = await getPassword(entry, fullToken, masterPassword);
+        setEntry((prev) => ({ ...prev, password: password }));
+        setSnapshot({ ...entry, password: password });
+        setEditing(true);
+        setKey({ fullToken, masterPassword });
+      } catch {
+        return;
+      }
       return;
     }
     setEditing(false);
     if (
       snapshot.platform === entry.platform &&
-      snapshot.username === entry.username &&
       snapshot.tag === entry.tag &&
+      snapshot.username === entry.username &&
+      snapshot.password === entry.password &&
       snapshot.url === entry.url
-    )
+    ) {
+      cleanUp();
       return;
+    }
     try {
-      const { masterPassword, fullToken } = await prompt();
+      const { fullToken, masterPassword } = key;
       await updatePassword(entry, fullToken, masterPassword);
+      cleanUp();
       refresh();
     } catch {
-      setEntry(snapshot);
-      return;
+      revertChanges();
     }
   };
 
@@ -87,7 +114,7 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
         onCancel={cancelPrompt}
       />
       <form
-        className={`flex justify-between border transition-colors h-fit py-4  rounded-lg
+        className={`flex justify-between border transition-colors h-fit py-4 rounded-lg
           ${editing ? "bg-amber-950/20 border-amber-800/30 hover:border-amber-600/50" : "bg-fuchsia-950/20 border-fuchsia-800/30  hover:border-fuchsia-600/50"} `}
         onSubmit={handleEditToggle}
       >
@@ -115,13 +142,19 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
               editing={editing}
               setValue={(value) => setEntry({ ...entry, username: value })}
             />
-            <PasswordField editing={editing} entry={entry} prompt={prompt} />
+            <PasswordField
+              value={entry.password}
+              editing={editing}
+              setValue={(value) => setEntry({ ...entry, password: value })}
+              id={entry.id}
+              setKey={setKey}
+              prompt={prompt}
+            />
             <URLField
               value={entry.url}
               editing={editing}
               setValue={(value) => setEntry({ ...entry, url: value })}
             />
-
             <div className="flex items-center w-full">
               <span className="text-xs text-gray-400 w-24">Modified:</span>
               <span className="text-xs text-gray-500">
@@ -132,14 +165,32 @@ export default function PasswordCard({ refresh, ...initial_entry }) {
             </div>
           </div>
         </div>
-        <div className="h-full w-24 flex justify-between pr-4">
+        <div className="h-full flex justify-between pr-4 space-x-6">
           <button
             type={editing ? "submit" : "button"}
             onClick={!editing ? handleEditToggle : undefined}
             className="flex flex-col items-center text-sm text-gray-400 hover:text-gray-200 transition-colors h-fit outline-none"
           >
-            {editing ? <PenOff size={20} /> : <SquarePen size={20} />}
+            {editing ? (
+              <Check
+                size={20}
+                className="text-green-500 hover:text-green-300"
+              />
+            ) : (
+              <SquarePen size={20} />
+            )}
           </button>
+          {editing && (
+            <button className="flex flex-col items-center text-sm text-red-500 hover:text-red-300 transition-colors h-fit outline-none">
+              <X
+                size={20}
+                onClick={() => {
+                  setEditing(false);
+                  revertChanges();
+                }}
+              />
+            </button>
+          )}
           <button
             type="button"
             className="flex flex-col items-center text-sm text-gray-400 hover:text-gray-200 transition-colors h-fit outline-none"
@@ -196,79 +247,62 @@ function UsernameField({ value, editing, setValue }) {
   );
 }
 
-function PasswordField({ editing, entry, prompt }) {
+function PasswordField({ value, editing, setValue, id, setKey, prompt }) {
   const placeholder = "placeholder";
 
   const [isShowingPassword, setShowingPassword] = useState(false);
-  const [value, setValue] = useState(placeholder);
-  const [fetchedPassword, setFetchedPassword] = useState(placeholder);
-  const [key, setKey] = useState(null);
   const [ref, setRef] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [passwordLength, setPasswordLength] = useState(8);
+  const [includeSpecialChars, setIncludeSpecialChars] = useState(true);
 
-  const hidePassword = async () => {
-    setShowingPassword(false);
-    setFetchedPassword("");
-    setValue(placeholder);
-    setShowingPassword(false);
-    setKey(null);
-    if (value === fetchedPassword || key === null) {
-      return;
-    }
-    const newEntry = { password: value, ...entry };
-    try {
-      const { masterPassword, fullToken } = key;
-      await updatePassword(newEntry, fullToken, masterPassword);
-    } catch {
-      return;
-    }
+  const fillInGeneratedPassword = (length, chars) => {
+    const generated = generatePassword(length, chars);
+    setValue(generated);
   };
 
-  const showPassword = async () => {
-    try {
-      const { masterPassword, fullToken } = await prompt();
-      const password = await getPassword(entry, fullToken, masterPassword);
-      setKey({ masterPassword, fullToken });
-      setFetchedPassword(password);
-      setValue(password);
-      setShowingPassword(true);
-      if (ref) {
-        ref.focus();
-      }
-    } catch {
-      return;
-    }
-  };
-
-  useEffect(() => {
-    if (!editing) {
-      const cleanUp = async () => {
-        hidePassword();
-      };
-      cleanUp();
-    }
-  }, [editing]);
-
-  function handleShowPasswordToggle() {
+  const handleShowPasswordToggle = async () => {
     if (!isShowingPassword) {
-      showPassword();
-    } else {
-      hidePassword();
+      if (editing) {
+        setShowingPassword(true);
+      } else {
+        try {
+          const { masterPassword, fullToken } = await prompt();
+          const password = await getPassword(
+            { id: id },
+            fullToken,
+            masterPassword,
+          );
+          setShowingPassword(true);
+          setValue(password);
+          setKey({ masterPassword, fullToken });
+          if (ref.current) ref.current.focus();
+        } catch {
+          return;
+        }
+      }
+      return;
     }
-  }
+    setShowingPassword(false);
+    if (!editing) {
+      setValue(null);
+      setKey(null);
+    }
+  };
 
   const handleCopy = async () => {
-    if (isShowingPassword) {
-      navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1000);
-      return;
-    }
-
     try {
-      const { masterPassword, fullToken } = key === null ? await prompt() : key;
-      const password = await getPassword(entry, fullToken, masterPassword);
-      navigator.clipboard.writeText(password);
+      if (editing || isShowingPassword) {
+        navigator.clipboard.writeText(value);
+      } else {
+        const { masterPassword, fullToken } = await prompt();
+        const password = await getPassword(
+          { id: id },
+          fullToken,
+          masterPassword,
+        );
+        navigator.clipboard.writeText(password);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1000);
     } catch {
@@ -277,25 +311,25 @@ function PasswordField({ editing, entry, prompt }) {
   };
 
   return (
-    <div className="flex items-center w-full">
-      <span className="text-xs text-gray-400 w-24">Password:</span>
-      <VariableSizeInput
-        setRef={setRef}
-        type={isShowingPassword ? "text" : "password"}
-        className={`text-sm w-fit focus:outline-none text-gray-200 bg-transparent border-b
-          ${editing && isShowingPassword ? "cursor-text border-fuchsia-800 focus:border-fuchsia-500 hover:border-fuchsia-500" : "border-transparent cursor-default"}`}
-        value={value}
-        readOnly={!(editing && isShowingPassword)}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      <button
-        type="button"
-        className="ml-4 text-fuchsia-500 hover:text-fuchsia-400 focus:outline-none"
-        onClick={handleShowPasswordToggle}
-      >
-        {isShowingPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-      </button>
-      {!editing && (
+    <>
+      <div className="flex items-center w-full">
+        <span className="text-xs text-gray-400 w-24">Password:</span>
+        <VariableSizeInput
+          setRef={setRef}
+          type={isShowingPassword ? "text" : "password"}
+          className={`text-sm w-fit focus:outline-none text-gray-200 bg-transparent border-b
+          ${editing ? "cursor-text border-fuchsia-800 focus:border-fuchsia-500 hover:border-fuchsia-500" : "border-transparent cursor-default"}`}
+          value={!value || value === null ? placeholder : value}
+          readOnly={!editing}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <button
+          type="button"
+          className="ml-4 text-fuchsia-500 hover:text-fuchsia-400 focus:outline-none"
+          onClick={handleShowPasswordToggle}
+        >
+          {isShowingPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
         <button
           type="button"
           className={`ml-4 ${copied ? "text-green-500" : "text-fuchsia-500 hover:text-fuchsia-400"} focus:outline-none transition-all`}
@@ -303,8 +337,43 @@ function PasswordField({ editing, entry, prompt }) {
         >
           {copied ? <Check size={16} /> : <Copy size={16} />}
         </button>
+      </div>
+      {editing && (
+        <div className="flex items-center w-full space-x-4">
+          <span className="text-xs text-gray-400 w-24">Generate password</span>
+          <input
+            type="range"
+            min={8}
+            max={32}
+            value={passwordLength}
+            onChange={(e) => {
+              setPasswordLength(Number(e.target.value));
+              fillInGeneratedPassword(
+                Number(e.target.value),
+                includeSpecialChars,
+              );
+            }}
+            className="w-28 h-1 appearance-none rounded-full outline-none cursor-pointer accent-gray-400 bg-fuchsia-500/80 -ml-4"
+          />
+          <span className="text-xs text-gray-500 w-2">{passwordLength}</span>
+          <div className="flex items-center space-x-1.5">
+            <div
+              onClick={() => {
+                setIncludeSpecialChars(!includeSpecialChars);
+                fillInGeneratedPassword(passwordLength, !includeSpecialChars);
+              }}
+              className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center cursor-pointer transition-colors shrink-0
+                    ${includeSpecialChars ? "bg-fuchsia-600 border-fuchsia-500" : "bg-transparent border-fuchsia-800 hover:border-fuchsia-600"}`}
+            >
+              {includeSpecialChars && (
+                <Check size={12} className="text-black" strokeWidth={3} />
+              )}
+            </div>
+            <span className="text-xs text-gray-400">Characters</span>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
 

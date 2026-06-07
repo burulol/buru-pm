@@ -260,17 +260,6 @@ function NewPassword({ setFormActive, refresh, passwords }) {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="flex items-center w-full">
-              <span className="text-xs text-gray-400 w-24">URL:</span>
-              <VariableSizeInput
-                type="text"
-                className="text-sm w-fit focus:outline-none text-gray-200 bg-transparent border-b
-                        cursor-text border-green-800 focus:border-green-500 hover:border-green-500"
-                value={entry.url}
-                placeholder="URL"
-                onChange={(e) => setEntry({ ...entry, url: e.target.value })}
-              />
-            </div>
             <div className="flex items-center w-full space-x-4">
               <span className="text-xs text-gray-400 w-24">
                 Generate password
@@ -310,6 +299,17 @@ function NewPassword({ setFormActive, refresh, passwords }) {
                 </div>
                 <span className="text-xs text-gray-400">Characters</span>
               </div>
+            </div>
+            <div className="flex items-center w-full">
+              <span className="text-xs text-gray-400 w-24">URL:</span>
+              <VariableSizeInput
+                type="text"
+                className="text-sm w-fit focus:outline-none text-gray-200 bg-transparent border-b
+                        cursor-text border-green-800 focus:border-green-500 hover:border-green-500"
+                value={entry.url}
+                placeholder="URL"
+                onChange={(e) => setEntry({ ...entry, url: e.target.value })}
+              />
             </div>
           </div>
         </div>
